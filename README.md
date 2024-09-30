@@ -1,7 +1,10 @@
 # New Coders Market Analysis
 
 ## Overview
-This project aims to identify the best market to advertise programming courses, using the open dataset from the 2018 freeCodeCamp new coder survey.
+This project aims to identify the optimal market to advertise programming courses, using the open dataset from the 2018 freeCodeCamp new coder survey by identifying these three factors:
+1. Specific **career paths** that new coders are interested in, such as web and mobile development and data science
+2. **Location densities** of new coders to identify countries with high demand for programming resources
+3. **Amount of money new coders are prepared to spend** in learning to code
 
 ## Data Source
 - **Source**: Open dataset from [freeCodeCamp's 2018 survey](https://github.com/freeCodeCamp/2018-new-coder-survey/blob/master/raw-data/2018-new-coder-survey.csv)
@@ -54,7 +57,7 @@ create_plot(career_intrst, "Career interests of new coders (2018)", "career_inte
 
 ![career_interest](Plots/career_interest.png)
 
-### Country and Spending Analysis
+### Location and Spending Analysis
 To focus on participants from English-speaking countries, we filtered for those residing in the United States, India, the United Kingdom, and Canada. We analyze how much they spend monthly on learning to code by calculating the average monthly_spent and visualizing the distribution with a boxplot.
 
 ```r
