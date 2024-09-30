@@ -49,6 +49,7 @@ Use the ```survey-data-analysis.R``` script to analyze the cleaned dataset.
 
 ### Career Interests
 **Question:** Which careers are new coders interested in?
+
 **Code snippet:**
 ```r
 # Define function to calculate percentage for specified columns
@@ -65,6 +66,7 @@ Primary areas of interest among participants are **web and mobile development**,
 
 ### Location Density
 **Question:** Where do the new coders currently live?
+
 **Code snippet:**
 ```loc_density <- filtered_df %>%
   group_by(residence) %>%
