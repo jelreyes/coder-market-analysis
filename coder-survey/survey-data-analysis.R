@@ -59,7 +59,7 @@ career_intrst$column <- recode(career_intrst$column,
                                career_infosec = "Information Security",
                                career_dataeng = "Data Engineer"
 )
-create_plot(career_intrst, "Career interests of new coders", "career_interest.png")
+create_plot(career_intrst, "Career interests of new coders", "plots/career_interest.png")
 
 # Remove responses with no career interests
 filtered_df <- coder_survey %>%
@@ -92,14 +92,14 @@ distribution <- ggplot( data = top4_df, aes(x = residence, y = monthly_spent)) +
   ylab("Monthly spent (US dollars)") +
   theme_bw()
 
-ggsave("spent_distribution.png", plot = distribution, width = 8, height = 6)
+ggsave("plots/spent_distribution.png", plot = distribution, width = 8, height = 6)
 
 # Filter out responses with unrealistic amount spent for learning code in a month (20,000 USD)
-top4_df  <- top4_df %>% 
+filtered_top4_df  <- top4_df %>% 
   filter(monthly_spent < 20000)
 
 # Assign index for each rows to easily apply filters
-top4_df <- top4_df %>%
+filtered_top4_df <- filtered_top4_df %>%
   mutate(index = row_number())
 
 #' Define function to check outliers by country, showing:
@@ -121,37 +121,37 @@ outlier_df <- function(df, residence_value, monthly_spent_value) {
 
 #' Applying specific filters for each country after examining the plot
 
-canada_outlier <- outlier_df(top4_df, "Canada", 5000)
-top4_df  <-  top4_df %>% 
+canada_outlier <- outlier_df(filtered_top4_df, "Canada", 5000)
+filtered_top4_df  <-  filtered_top4_df %>% 
   filter(!(index %in% canada_outlier$index))
 
-india_outlier <- outlier_df(top4_df, "India", 5000)
-top4_df  <-  top4_df %>% 
+india_outlier <- outlier_df(filtered_top4_df, "India", 5000)
+filtered_top4_df  <-  filtered_top4_df %>% 
   filter(!(index %in% india_outlier$index))
 
-uk_outlier <- outlier_df(top4_df, "United Kingdom", 5000)
-top4_df  <-  top4_df %>% 
+uk_outlier <- outlier_df(filtered_top4_df, "United Kingdom", 5000)
+filtered_top4_df  <-  filtered_top4_df %>% 
   filter(!(index %in% uk_outlier$index))
 
-us_outlier <- outlier_df(top4_df, "United States of America", 5000)
-us_outlier <- top4_df %>%
+us_outlier <- outlier_df(filtered_top4_df, "United States of America", 5000)
+us_outlier <- filtered_top4_df %>%
   filter(
     residence == "United States of America",
     monthly_spent >= 6000,
     months_code <= 3 | bootcamp_attend != 1
   )
-top4_df  <-  top4_df %>% 
+filtered_top4_df  <-  filtered_top4_df %>% 
   filter(!(index %in% us_outlier$index))
 
 # Generating plot for filtered data
-distribution2 <- ggplot( data = top4_df, aes(x = residence, y = monthly_spent)) +
+distribution2 <- ggplot( data = filtered_top4_df, aes(x = residence, y = monthly_spent)) +
   geom_boxplot() +
   ggtitle("Distribution of Monthly Learning Expenses by Country") +
   xlab(NULL) +
   ylab("Monthly spent (US dollars)") +
   theme_bw()
 
-ggsave("spent_distribution2.png", plot = distribution2, width = 8, height = 6)
+ggsave("plots/spent_distribution2.png", plot = distribution2, width = 8, height = 6)
 
 # Compute average monthly spending per country
 mean_per_country <- top4_df %>% 
