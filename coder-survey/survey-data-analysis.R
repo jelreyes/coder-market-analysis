@@ -19,7 +19,7 @@ create_plot <- function(career_data, title, filename) {
   plot <- ggplot(career_data, aes(x = percentage * 100, y = reorder(column, percentage))) +
     geom_bar(stat = "identity", fill = "skyblue") +
     geom_text(aes(label = paste0(round(percentage * 100, 1), "%")), 
-              hjust = -0.2, size = 3.5) + 
+              hjust = 1.5, size = 3.5, color = "black") +  # Position labels at the end of the bars
     labs(y = NULL) +                    
     theme_minimal() +
     theme(
@@ -29,7 +29,8 @@ create_plot <- function(career_data, title, filename) {
       axis.text.x = element_blank(),        
       axis.title.y = element_blank(),       
       panel.grid = element_blank(),         
-      axis.text = element_text(size = 10)   
+      axis.text = element_text(size = 10),
+      plot.title = element_text(hjust = 0.5)  # Center plot title
     ) +
     ggtitle(title) +
     coord_cartesian(clip = "off")           
@@ -41,11 +42,26 @@ create_plot <- function(career_data, title, filename) {
 #' The "career_" columns contain the careers the participants are interested in
 #' and are bool-type, having 1 and NA values only
 
-#' Calculate career interests and generate plot
+#' Calculate career interests, rename column names, and generate plot
 career_intrst <- calculate_percentage(coder_survey, "career_")
-create_plot(career_intrst, "Career interests of new coders (2018)", "career_interest_plot.png")
+career_intrst$column <- recode(career_intrst$column,
+                               career_fullstack ="Full-Stack Web Developer",
+                               career_backend = "Back-End Web Developer",
+                               career_frontend = "Front-End Web Developer",
+                               career_mobdev = "Mobile Developer",
+                               career_devops = "DevOps / SysAdmin",
+                               career_datasci = "Data Scientist",
+                               career_teach = "Teacher / Trainer / Developer Evangelist",
+                               career_qa = "Quality Assurance Engineer",
+                               career_ux = "User Experience Designer",
+                               career_prodm = "Product Manager",
+                               career_gamedev = "Game Developer",
+                               career_infosec = "Information Security",
+                               career_dataeng = "Data Engineer"
+)
+create_plot(career_intrst, "Career interests of new coders", "career_interest.png")
 
-# Filter data for further analysis
+# Remove responses with no career interests
 filtered_df <- coder_survey %>%
   filter(rowSums(is.na(select(., starts_with("career_")))) != ncol(select(., starts_with("career_"))))
 
@@ -64,19 +80,21 @@ filtered_df <- filtered_df %>%
   mutate(monthly_spent = amt_spent_code / months_code) %>%
   drop_na(monthly_spent)
 
-#' Filter responses for top 4 countries
+#' Filter responses for top 4 countries in loc_density
 top4_df <- filtered_df %>%
   filter(residence %in% c('United States of America', 'India', 'United Kingdom', 'Canada'))
 
 # Plot distribution of monthly spent for each country
-ggplot( data = top4_df, aes(x = residence, y = monthly_spent)) +
+distribution <- ggplot( data = top4_df, aes(x = residence, y = monthly_spent)) +
   geom_boxplot() +
-  ggtitle("Monthly spent for learning per country\n(Distributions)") +
-  xlab("Country") +
+  ggtitle("Distribution of Monthly Learning Expenses by Country") +
+  xlab(NULL) +
   ylab("Monthly spent (US dollars)") +
   theme_bw()
 
-# Filter out outliers for each country
+ggsave("spent_distribution.png", plot = distribution, width = 8, height = 6)
+
+# Filter out responses with unrealistic amount spent for learning code in a month (20,000 USD)
 top4_df  <- top4_df %>% 
   filter(monthly_spent < 20000)
 
@@ -101,52 +119,39 @@ outlier_df <- function(df, residence_value, monthly_spent_value) {
   outliers
 }
 
-#' In Canada, one of the outliers did not attend bootcamp and spent 8,500 USD each month
-#' while the other attended a boot camp but spent 18,500 USD each month
-#' Both of them are learning to code in 1 or less than a month when they completed the survey
-#' The amount of money spent per month is unrealistic and should be significantly lower
-#' so we are removing both of these outliers
+#' Applying specific filters for each country after examining the plot
 
 canada_outlier <- outlier_df(top4_df, "Canada", 5000)
 top4_df  <-  top4_df %>% 
   filter(!(index %in% canada_outlier$index))
 
-#' All of the 6 outliers did not attend any boot camp, four of them even indicate they spent 
-#' >= 10,000 USD in each month for less than 4 months in learning to code
-#' The question from the survey says "Aside from university tuition, about how much money have you spent on learning to code so far (in US dollars)?"
-#' So the question might have been misinterpreted and for this reason, we are removing these responses
-
 india_outlier <- outlier_df(top4_df, "India", 5000)
-
-#' UK has similar instances to Canada, with one spending over 16,000 USD per month in 3 months
-#' without attending any boot camp and the other attended but only has been programming for one or less than
-#' a month but spent 8,000 USD per month. We are also removing these outliers
-
 top4_df  <-  top4_df %>% 
   filter(!(index %in% india_outlier$index))
+
 uk_outlier <- outlier_df(top4_df, "United Kingdom", 5000)
-
-#' US respondents have higher amount spent per month for outliers (~9,000 USD)
-#' It's hard to identify if these are good data so we'll closely examine
-#' respondents with monthly spent amounting to more than 5,000 USD
-
 top4_df  <-  top4_df %>% 
   filter(!(index %in% uk_outlier$index))
+
 us_outlier <- outlier_df(top4_df, "United States of America", 5000)
-
-#' 15 out of 29 either did not attend boot camp or only have been learning to code for
-#' <=3 months, but spending >= 6,000 USD per month so we are also removing participants
-#' from US with these criteria
-
 us_outlier <- top4_df %>%
   filter(
     residence == "United States of America",
     monthly_spent >= 6000,
     months_code <= 3 | bootcamp_attend != 1
   )
-
 top4_df  <-  top4_df %>% 
   filter(!(index %in% us_outlier$index))
+
+# Generating plot for filtered data
+distribution2 <- ggplot( data = top4_df, aes(x = residence, y = monthly_spent)) +
+  geom_boxplot() +
+  ggtitle("Distribution of Monthly Learning Expenses by Country") +
+  xlab(NULL) +
+  ylab("Monthly spent (US dollars)") +
+  theme_bw()
+
+ggsave("spent_distribution2.png", plot = distribution2, width = 8, height = 6)
 
 # Compute average monthly spending per country
 mean_per_country <- top4_df %>% 
