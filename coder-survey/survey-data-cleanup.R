@@ -1,45 +1,51 @@
+#' We are using the open dataset from freeCodeCamp's 2018 survey
+#' https://github.com/freeCodeCamp/2018-new-coder-survey/blob/master/raw-data/2018-new-coder-survey.csv
+#' This script cleans the data with 31,226 rows and 136 columns for further analysis
+
 library(readr)
 library(tidyverse)
 library(dplyr)
 
-# Main function to read, clean, and write the survey data
+#' Main function to read, clean, and write the survey data in the same directory
+#' Below this are the functions used for cleaning the data
 main <- function() {
-  # Read the CSV file
-  data_path <- "2018-new-coder-survey.csv"  # Assuming the CSV is in the same directory
+  data_path <- "2018-new-coder-survey.csv"
   coder_survey <- read_csv(data_path)
   
-  # Clean the data
   cleaned_data <- clean_data(coder_survey)
   
-  # Specify the output path for the cleaned data (same directory)
-  output_path <- "cleaned-coder-survey.csv"  # Output in the same folder
+  output_path <- "cleaned-coder-survey.csv"
   
-  # Write the cleaned data to CSV
   write_csv(cleaned_data, output_path)
 }
 
-# Function to clean the data
+#' Functions to apply sanity checks / filter for the data
 clean_data <- function(data) {
   # Rename columns
   renamed_data <- rename_col(data)
   
   # Filtering steps
   filtered_data <- renamed_data %>%
+    
     # Remove answered form too fast
     filter(difftime(ts_end, ts_start, units = "mins") > 1) %>%
-    # Remove invalid number of kids
+    
+    # Remove invalid number of kids (eg, answer is with children but answer is 0 in no. of children)
     filter((has_chldren == 1 & (num_children > 0 | is.na(num_children))) |
              (has_chldren == 0 & (num_children == 0 | is.na(num_children))) |
              (is.na(has_chldren) & is.na(num_children))) %>%
-    filter(num_children < 20 | is.na(num_children) & !is.na(num_children)) %>%
-    # Remove when age > months_code * 12
-    filter(is.na(age) | is.na(months_code) | age > months_code * 12) %>%
-    # Cap age to 116
+    filter(num_children < 20 | is.na(num_children)) %>%
+    
+    # Remove when years spent in coding is more than the age
+    filter(is.na(age) | is.na(months_code) | age * 12 > months_code) %>%
+    
+    # Cap age to 116 (oldest living person in the world as of Sep 2024 accd to Guinness World Records)
     filter(is.na(age) | age < 116) %>%
+    
     # Remove when last year income > 1m
     filter(lastyr_income < 1000000 | is.na(lastyr_income))
   
-  # Transform data into countable
+  # Transform some columns to become countable
   prefixes <- c("career_", "rsrc_", "codepodcast_", "codeyt_", "codeevent_")
   pattern <- paste0(prefixes, collapse = "|")
   
@@ -47,11 +53,11 @@ clean_data <- function(data) {
     mutate(across(matches(pattern) & !ends_with("_other"), 
                   ~ ifelse(!is.na(.), 1, .)))
   
-  # Write in title case for later presentation
+  # Rewrite values in "Other" in title case for later presentation
   final_df <- bool_df %>%
     mutate(across(ends_with("_other"), ~ ifelse(is.na(.), ., tools::toTitleCase(.))))
   
-  return(final_df)
+  final_df
 }
 
 # Function to rename columns
@@ -109,7 +115,7 @@ rename_col <- function(data) {
       rsrc_csstricks = "CSS Tricks",
       rsrc_other = "Other...43",
       
-      #in person coding related events
+      #in person coding related events attended
       codeevent_fcc = "freeCodeCamp study groups",
       codeevent_hckathon = "hackathons",
       codeevent_conf = "conferences",
