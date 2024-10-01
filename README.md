@@ -60,7 +60,7 @@ calculate_percentage <- function(data, prefix) {
 }
 career_intrst <- calculate_percentage(coder_survey, "career_")
 ```
-![career_interest](coder-survey/plots/career_interest.png)
+![career_interest](plots/career_interest.png)
 
 Primary areas of interest among participants are **web and mobile development**, which account for **15% to 25%** of the responses. Notably, many participants indicated interest in multiple niches. However, the majority are still uncertain about their specific career aspirations. We excluded rows with no answers in these columns to ensure we were working with a representative sample.
 
@@ -104,7 +104,7 @@ ggplot(top4_df, aes(x = residence, y = monthly_spent)) +
   ylab("Monthly spent (US dollars)") +
   theme_bw()
 ```
-![spent_distribution](coder-survey/plots/spent_distribution.png)
+![spent_distribution](plots/spent_distribution.png)
 
 ### Outlier Detection
 Significant outliers were detected in the spending distribution:
@@ -128,7 +128,7 @@ us_outlier <- top4_df %>%
 top4_df  <-  top4_df %>% 
   filter(!(index %in% us_outlier$index))
 ```
-![spent_distribution2](coder-survey/plots/spent_distribution2.png)
+![spent_distribution2](plots/spent_distribution2.png)
 
 ### Summary Statistics
 ```r
